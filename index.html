@@ -1,0 +1,573 @@
+<!doctype html>
+<!--
+Copyright 2017 JellyWare Inc. All Rights Reserved.
+-->
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="BlueJelly">
+    <meta name="viewport" content="width=640, maximum-scale=1.0, user-scalable=yes">
+    <title>BlueJelly</title>
+    <link href="https://fonts.googleapis.com/css?family=Lato:100,300,400,700,900" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="bluejelly.js"></script>
+    <script type="text/javascript" src="./smoothie.js"></script>
+  </head>
+
+<body>
+<div class="container">
+    <div class="title margin">
+        <p id="title">BlueJelly Sample</p>
+        <p id="subtitle">graph</p>
+    </div>
+
+    <div class="contents margin">
+        <button id="startNotifications" class="button">Start Notify</button>
+        <button id="stopNotifications" class="button">Stop Notify</button>
+        <button id="reset" class="button">Reset</button>
+
+        <hr>
+        <canvas id="chart" width="500" height="500"></canvas>
+
+        <div id="device_name"> </div>
+        <div id="uuid_name"> </div>
+        <div id="data_text"> </div>
+        <div id="data_text1"> </div>
+        <div id="data_text2"> </div>
+        <div id="data_text3"> </div>
+        <div id="data_text4"> </div>
+        <div id="data_text5"> </div>
+        <div id="data_text6"> </div>
+        <div id="status"> </div>
+
+    </div>
+    <div class="contents margin">
+      <button id="startNotifications2" class="button">Start Notify2</button>
+      <button id="stopNotifications2" class="button">Stop Notify2</button>
+      <button id="reset2" class="button">Reset2</button>
+
+      <hr>
+      <canvas id="chart2" width="500" height="500"></canvas>
+
+      <div id="device_name2"> </div>
+      <div id="uuid_name2"> </div>
+      <div id="data_text20"> </div>
+      <div id="data_text21"> </div>
+      <div id="data_text22"> </div>
+      <div id="data_text23"> </div>
+      <div id="data_text24"> </div>
+      <div id="data_text25"> </div>
+      <div id="data_text26"> </div>
+      <div id="status2"> </div>
+
+    </div>
+    <div class="footer margin">
+                For more information, see <a href="http://jellyware.jp/kurage" target="_blank">jellyware.jp</a> and <a href="https://github.com/electricbaka/bluejelly" target="_blank">GitHub</a> !
+    </div>
+</div>
+
+<!-- 音声ファイルの読み込み -->
+<audio id="sound-file1" preload="auto">
+<source src="./se_maoudamashii_instruments_drum1_hat.mp3" type="audio/mp3">
+</audio>
+<audio id="sound-file2" preload="auto">
+<source src="./se_maoudamashii_instruments_drum2_snare.mp3" type="audio/mp3">
+</audio>
+<audio id="sound-file3" preload="auto">
+<source src="./game_swordman-damage2.mp3" type="audio/mp3">
+</audio>
+
+<script>
+//--------------------------------------------------
+//Global変数
+//--------------------------------------------------
+//BlueJellyのインスタンス生成
+var ble = new BlueJelly();
+var ble2 = new BlueJelly();
+
+var ble_data = new TimeSeries();
+var ble_data1 = new TimeSeries();
+var ble_data2 = new TimeSeries();
+var ble_data3 = new TimeSeries();
+var ble_data4 = new TimeSeries();
+var ble_data5 = new TimeSeries();
+var ble_data6 = new TimeSeries();
+
+var ble_data20 = new TimeSeries();
+var ble_data21 = new TimeSeries();
+var ble_data22 = new TimeSeries();
+var ble_data23 = new TimeSeries();
+var ble_data24 = new TimeSeries();
+var ble_data25 = new TimeSeries();
+var ble_data26 = new TimeSeries();
+
+//(変化時のみ再生対応)音声再生許可フラグ
+var flag_playOK = true;
+var flag_playOK2 = true;
+
+//-------------------------------------------------
+//smoothie.js
+//-------------------------------------------------
+function createTimeline() {
+    var chart = new SmoothieChart({
+        millisPerPixel: 50,
+        grid: {
+            fillStyle: '#ff8319',
+            strokeStyle: '#ffffff',
+            millisPerLine: 1000
+        },
+        maxValue: 10000,
+        minValue: -10000
+    });
+    chart.addTimeSeries(ble_data, {
+        strokeStyle: 'rgba(255, 255, 255, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart.addTimeSeries(ble_data1, {
+        strokeStyle: 'rgba(0, 0, 0, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart.addTimeSeries(ble_data2, {
+        strokeStyle: 'rgba(255, 0, 0, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart.addTimeSeries(ble_data3, {
+        strokeStyle: 'rgba(0, 255, 0, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart.addTimeSeries(ble_data4, {
+        strokeStyle: 'rgba(0, 0, 255, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart.addTimeSeries(ble_data5, {
+        strokeStyle: 'rgba(255, 0, 255, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart.addTimeSeries(ble_data6, {
+        strokeStyle: 'rgba(0, 255, 255, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart.streamTo(document.getElementById("chart"), 500);
+
+    var chart2 = new SmoothieChart({
+        millisPerPixel: 50,
+        grid: {
+            fillStyle: '#ff8319',
+            strokeStyle: '#ffffff',
+            millisPerLine: 1000
+        },
+        maxValue: 700,
+        minValue: -700
+    });
+    chart2.addTimeSeries(ble_data20, {
+        strokeStyle: 'rgba(255, 255, 255, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart2.addTimeSeries(ble_data21, {
+        strokeStyle: 'rgba(0, 0, 0, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart2.addTimeSeries(ble_data22, {
+        strokeStyle: 'rgba(255, 0, 0, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart2.addTimeSeries(ble_data23, {
+        strokeStyle: 'rgba(0, 255, 0, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart2.addTimeSeries(ble_data24, {
+        strokeStyle: 'rgba(0, 0, 255, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart2.addTimeSeries(ble_data25, {
+        strokeStyle: 'rgba(255, 0, 255, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart2.addTimeSeries(ble_data26, {
+        strokeStyle: 'rgba(0, 255, 255, 0.6)',
+        fillStyle: 'rgba(255, 255, 255, 0)',
+        lineWidth: 2
+    });
+    chart2.streamTo(document.getElementById("chart2"), 500);
+}
+
+
+//--------------------------------------------------
+//ロード時の処理
+//--------------------------------------------------
+window.onload = function () {
+  //UUIDの設定
+  ble.setUUID("UUID1", "713d0000-503e-4c75-ba94-3148f18d941e", "713d0002-503e-4c75-ba94-3148f18d941e");  //BLEnano SimpleControl rx_uuid
+  ble2.setUUID("UUID1", "713d0000-503e-4c75-ba94-3148f18d941e", "713d0002-503e-4c75-ba94-3148f18d941e");  //BLEnano SimpleControl rx_uuid
+  
+  //smoothie.js
+  createTimeline();
+}
+
+
+//--------------------------------------------------
+//Scan後の処理
+//--------------------------------------------------
+ble.onScan = function (deviceName) {
+  document.getElementById('device_name').innerHTML = deviceName;
+  document.getElementById('status').innerHTML = "found device!";
+}
+ble2.onScan = function (deviceName) {
+  document.getElementById('device_name2').innerHTML = deviceName;
+  document.getElementById('status2').innerHTML = "found device!";
+}
+
+
+//--------------------------------------------------
+//ConnectGATT後の処理
+//--------------------------------------------------
+ble.onConnectGATT = function (uuid) {
+  console.log('> connected GATT!');
+
+  document.getElementById('uuid_name').innerHTML = uuid;
+  document.getElementById('status').innerHTML = "connected GATT!";
+}
+ble2.onConnectGATT = function (uuid) {
+  console.log('> connected GATT!');
+
+  document.getElementById('uuid_name2').innerHTML = uuid;
+  document.getElementById('status2').innerHTML = "connected GATT!";
+}
+
+
+//--------------------------------------------------
+//Read後の処理：得られたデータの表示など行う
+//--------------------------------------------------
+var currentTime = 0, previousTime = 0;
+//var prevalue3 = 0, prevalue4 = 0, prevalue5 = 0;
+var preroll = 0, prepitch = 0, preyaw = 0;
+var pitch = 0.0, roll = 0.0, yaw = 0.0;
+var rollacc = 0.0, pitchacc = 0.0;
+var rollg = 0.0, pitchg = 0.0;
+
+//楽器の向き切り替えのフラグ
+var direction = true;
+//上下roll検知カウント[msec]
+var uprollcnt = 0, downrollcnt = 0;
+//向き切り替え閾値上値と下値
+const uproll = 10000, downroll = -10000;
+//判別時間[msec]
+const dirchk = 3;
+//rollの微分値(向き判別に使用)
+var droll = 0;
+//向き判別用にprerollを別に格納
+var prerford = 0;
+
+//音源切り替えのフラグ（奇数なら切り替え）
+var count = 2;
+
+ble.onRead = function (data, uuid){
+	// dtの計算[sec]
+	currentTime = performance.now();
+	dt = (currentTime - previousTime) / 1000.0;
+	previousTime = currentTime;
+
+  //フォーマットに従って値を取得
+  value = data.getInt16(0);//-65532/2;//2Byteの場合のフォーマット
+  value1 = data.getInt16(2);//-65532/2;
+  value2 = data.getInt16(4)-2100;//+65532/2;
+  value3 = data.getInt16(6)+50;//+65532/2;
+  value4 = data.getInt16(8);//-65532/2;
+  value5 = data.getInt16(10);//-65532/2;
+  value6 = data.getInt16(12)+2700;//-65532/2;
+
+    //加速度センサからの角度計算（ドリフト補正に使用）
+    rollacc = Math.atan2(value1, value2);
+    pitchacc = Math.atan2(value, Math.sqrt(value1 * value1 + value2 * value2));
+
+    //x,y,z軸周りの回転角度を計算（積分）
+    //roll = preroll + value3 * dt;
+    //pitch = prepitch + value4 * dt;
+    yaw += value5 * dt;
+
+    //向き判別に使用するprerollを格納
+    prerford = preroll;
+
+    //x,y,z軸周りの回転角度を計算（積分）ドリフト補正
+    roll = 0.995 * (preroll + value3 * dt) + 0.005 * rollacc;
+    preroll = roll;
+    pitch = 0.995 * (prepitch + value4 * dt) + 0.005 * pitchacc;
+    prepitch = pitch;
+
+  //x,y,z軸周りの回転角度を計算(台形積分)
+  //roll += (prevalue3 + value3) * dt / 2;
+  //prevalue3 = value3;
+  //pitch += (prevalue4 + value4) * dt / 2;
+  //prevalue4 = value4;
+  //yaw += (prevalue5 + value5) * dt / 2;
+  //prevalue5 = value5;
+
+    //センサ座標が動くのを考慮
+    rollg = roll + pitch * Math.sin(value5*dt*Math.PI/180);
+    pitchg = pitch - roll * Math.sin(value5 * dt * Math.PI/180);
+
+    //preroll = roll;
+    //prepitch = pitch;
+    //preyaw = yaw;
+
+  //ドリフト補正用の加速度データによる角度値実装中※
+  //rollacc = Math.atan2(value2, value1) * Math.pi/180;
+  //pitchacc = -Math.atan2(value/Math.sqrt(value1 * value1 + value2 * value2)) * Math.pi/180;
+
+  //ドリフト補正実装途中※
+  //roll = 0.995 * (preroll + value3 * dt) + 0.005 * rollacc;
+  //pitch = 0.995 * (pitch + value4 * dt) + 0.005 * value1;
+  //yaw = 0.995 * (yaw + value5 * dt) + 0.005 * value2;
+
+  //向き判別
+  droll = (roll-prerford)*100;
+  if(droll >= uproll && value < 4000)
+  {
+    //direction = false;
+    uprollcnt += 1;
+    //downrollcnt = 0;
+    if(uprollcnt >= dirchk)
+    {
+      direction = false;
+      uprollcnt = 0;
+    }
+  }
+  else if(droll <= downroll && value > -4000)
+  {
+    //direction = true;
+    downrollcnt += 1;
+    //uprollcnt = 0;
+    if(downrollcnt >= dirchk)
+    {
+      direction = true;
+      downrollcnt = 0;
+    }
+  }
+  /*else if(droll <= 3000 && droll >= -3000)
+  {
+    uprollcont = 0;
+    downrollcnt = 0;
+  }*/
+
+  //コンソールに値を表示
+  console.log(value3);
+  console.log(value4);
+  console.log(value5);
+
+  //HTMLに値を表示
+  document.getElementById('data_text').innerHTML = value;
+  document.getElementById('data_text1').innerHTML = value1;
+  document.getElementById('data_text2').innerHTML = value2;
+  document.getElementById('data_text3').innerHTML = direction;
+  document.getElementById('data_text4').innerHTML = roll;
+  document.getElementById('data_text5').innerHTML = droll;
+  document.getElementById('data_text6').innerHTML = value6;
+
+  document.getElementById('uuid_name').innerHTML = uuid;
+  document.getElementById('status').innerHTML = "read data"
+
+  //グラフへ反映
+  ble_data.append(new Date().getTime(), value);
+  ble_data1.append(new Date().getTime(), value1);
+  ble_data2.append(new Date().getTime(), value2);
+  //ble_data3.append(new Date().getTime(), roll);
+  ble_data4.append(new Date().getTime(), roll);
+  ble_data5.append(new Date().getTime(), droll);
+  //ble_data6.append(new Date().getTime(), value6);
+
+
+
+  //BLEデータ値に応じて音声出力
+  if(value <= -8000)
+  {
+    //(変化時のみ再生対応)音声再生許可が有効のときのみ再生
+    if(flag_playOK == true)
+    {
+      //(割り込み再生対応)音声ファイルを巻き戻し
+      //方向1
+      if(direction == true)
+      {
+        //音源切り替えがあったかどうか
+        if(count % 2 ==0)
+        {
+          document.getElementById("sound-file1").currentTime = 0;
+
+          //音声ファイル再生
+          document.getElementById("sound-file1").play();
+        }
+        else
+        {
+          document.getElementById("sound-file3").currentTime = 0;
+
+          //音声ファイル再生
+          document.getElementById("sound-file3").play();
+        }
+      }
+      //方向2
+      else if(direction == false)
+      {
+        //音源切り替えがあったかどうか
+        if(count % 2 ==0)
+        {
+          document.getElementById("sound-file2").currentTime = 0;
+
+          //音声ファイル再生
+          document.getElementById("sound-file2").play();
+        }
+        else
+        {
+          document.getElementById("sound-file3").currentTime = 0;
+
+          //音声ファイル再生
+          document.getElementById("sound-file3").play();
+        }
+      }
+      //(変化時のみ再生対応)音声再生許可を無効にする
+      flag_playOK = false;
+
+    }
+  }
+  //(ノイズ変動対応)音声再生許可の有効と無効の閾値に差を設ける
+  else if(value >= -7000)
+  {
+    //(変化時のみ再生対応)音声再生許可を有効にする
+    flag_playOK = true;
+    //flag_playOK2 = true;
+  }
+  if(value1 <= -15000)
+  {
+    count = count + 1;
+  }
+}
+
+ble2.onRead = function (data, uuid){
+
+    //フォーマットに従って値を取得
+    value20 = data.getInt16(0);//2Byteの場合のフォーマット
+    value21 = data.getInt16(2);
+    value22 = data.getInt16(4)-2100;
+    value23 = data.getInt16(6)+50;
+    value24 = data.getInt16(8);
+    value25 = data.getInt16(10);
+    value26 = data.getInt16(12)+2700;
+
+    //コンソールに値を表示
+    console.log(value23);
+    console.log(value24);
+    console.log(value25);
+
+    //HTMLに値を表示
+    document.getElementById('data_text20').innerHTML = value20;
+    document.getElementById('data_text21').innerHTML = value21;
+    document.getElementById('data_text22').innerHTML = value22;
+    //document.getElementById('data_text23').innerHTML = roll;
+    //document.getElementById('data_text24').innerHTML = pitch;
+    //document.getElementById('data_text25').innerHTML = yaw;
+    document.getElementById('data_text26').innerHTML = value26;
+
+    document.getElementById('uuid_name2').innerHTML = uuid;
+    document.getElementById('status2').innerHTML = "read data"
+
+    //グラフへ反映
+    ble_data.append(new Date().getTime(), value20);
+    ble_data1.append(new Date().getTime(), value21);
+    ble_data2.append(new Date().getTime(), value22);
+    //ble_data3.append(new Date().getTime(), roll);
+    //ble_data4.append(new Date().getTime(), pitch);
+    //ble_data5.append(new Date().getTime(), yaw);
+    //ble_data6.append(new Date().getTime(), value26);
+}
+
+
+//--------------------------------------------------
+//Start Notify後の処理
+//--------------------------------------------------
+ble.onStartNotify = function(uuid){
+  console.log('> Start Notify!');
+
+  document.getElementById('uuid_name').innerHTML = uuid;
+  document.getElementById('status').innerHTML = "started Notify";
+}
+ble2.onStartNotify = function(uuid){
+  console.log('> Start Notify2!');
+
+  document.getElementById('uuid_name2').innerHTML = uuid;
+  document.getElementById('status2').innerHTML = "started Notify2";
+}
+
+
+//--------------------------------------------------
+//Stop Notify後の処理
+//--------------------------------------------------
+ble.onStopNotify = function(uuid){
+  console.log('> Stop Notify!');
+
+  document.getElementById('uuid_name').innerHTML = uuid;
+  document.getElementById('status').innerHTML = "stopped Notify";
+}
+ble2.onStopNotify = function(uuid){
+  console.log('> Stop Notify2!');
+
+  document.getElementById('uuid_name2').innerHTML = uuid;
+  document.getElementById('status2').innerHTML = "stopped Notify2";
+}
+
+
+//--------------------------------------------------
+//Reset後の処理
+//--------------------------------------------------
+ble.onReset = function() {
+    document.getElementById('device_name').innerHTML = "No Device";
+    document.getElementById('uuid_name').innerHTML = "Not Connected";
+    document.getElementById('status').innerHTML = "cleared";
+}
+ble2.onReset = function() {
+    document.getElementById('device_name2').innerHTML = "No Device";
+    document.getElementById('uuid_name2').innerHTML = "Not Connected";
+    document.getElementById('status2').innerHTML = "cleared";
+}
+
+
+//-------------------------------------------------
+//ボタンが押された時のイベント登録
+//--------------------------------------------------
+document.getElementById('startNotifications').addEventListener('click', function() {
+    ble.startNotify('UUID1');
+});
+
+document.getElementById('stopNotifications').addEventListener('click', function() {
+    ble.stopNotify('UUID1');
+});
+
+document.getElementById('reset').addEventListener('click', function() {
+    ble.reset(); //reset is disconnect & clear
+});
+
+document.getElementById('startNotifications2').addEventListener('click', function() {
+    ble2.startNotify('UUID1');
+});
+
+document.getElementById('stopNotifications2').addEventListener('click', function() {
+    ble2.stopNotify('UUID1');
+});
+
+document.getElementById('reset2').addEventListener('click', function() {
+    ble2.reset(); //reset is disconnect & clear
+});
+</script>
+</body>
+</html>
